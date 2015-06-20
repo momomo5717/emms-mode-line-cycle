@@ -1,0 +1,61 @@
+* emms-mode-line-cycle
+  
+  This is a minor mode for updating =emms-mode-line-string= cyclically within specified width
+  with =emms-playing-time-display=.
+
+  It is useful for long track titles.
+
+** Requirements
+
+   + GNU Emacs 24.4 or later
+   + EMMS 4.0 or later
+
+  Tested with GNU Emacs 24.5 (emacs-mac-app @5.7_0), EMMS 4.0
+
+** Setup
+
+   #+BEGIN_SRC emacs-lisp
+     (add-to-list 'load-path "/path/to/emms-mode-line-cycle")
+     (require 'emms-mode-line-cycle)
+
+     (emms-mode-line 1)
+     (emms-playing-time 1)
+
+     (emms-mode-line-cycle 1)
+   #+END_SRC
+
+** Usage
+
+**** User Option: =emms-mode-line-cycle-max-width=
+
+     Default value is =16=.
+
+**** User Option: =emms-mode-line-cycle-current-title-function=
+
+     This is used for getting the current track title before applying it to =emms-mode-line-format=.
+
+     Default value is as follows like =emms-mode-line-playlist-current=.
+
+     #+BEGIN_SRC emacs-lisp
+       (lambda () (emms-track-description (emms-playlist-current-selected-track)))     
+     #+END_SRC
+
+**** An example of setting
+
+     #+BEGIN_SRC emacs-lisp
+       (custom-set-variables
+        '(emms-mode-line-cycle-max-width 15)
+        '(emms-mode-line-format " [%s]")
+        '(emms-mode-line-cycle-current-title-function
+          (lambda ()
+            (let ((track (emms-playlist-current-selected-track)))
+              (case (emms-track-type track)
+                ((streamlist)
+                 (let ((stream-name (emms-stream-name
+                                     (emms-track-get track 'metadata))))
+                   (if stream-name stream-name (emms-track-description track))))
+                ((url)
+                 (emms-track-description track))
+                (t (file-name-nondirectory
+                    (emms-track-description track))))))))
+     #+END_SRC
