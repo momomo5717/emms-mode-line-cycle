@@ -1,16 +1,18 @@
 * emms-mode-line-cycle
-  
+
   This is a minor mode for updating =emms-mode-line-string= cyclically within specified width
   with =emms-playing-time-display=.
 
   It is useful for long track titles.
+
+  [[file:image.gif]]
 
 ** Requirements
 
    + GNU Emacs 24.4 or later
    + EMMS 4.0 or later
 
-  Tested with GNU Emacs 24.5 (emacs-mac-app @5.7_0), EMMS 4.0
+  Tested with GNU Emacs 24.5 (emacs-mac-app @5.9_0), EMMS 4.0
 
 ** Setup
 
@@ -21,14 +23,28 @@
      (emms-mode-line 1)
      (emms-playing-time 1)
 
+     ;; If you use this package like `emms-mode-line-icon', you need to load it.
+     (require 'emms-mode-line-icon)
+     (custom-set-variables '(emms-mode-line-cycle-use-icon-p t))
+
      (emms-mode-line-cycle 1)
    #+END_SRC
 
-** Usage
+** Customization
 
 **** User Option: =emms-mode-line-cycle-max-width=
 
-     Default value is =16=.
+     Default value is =16=. The width of =emms-mode-line-format= isn't included.
+
+**** User Option: =emms-mode-line-cycle-additional-space-num=
+
+     Default value is =2=. It is the number of space characters to add them to the current title.
+
+**** User Option: =emms-mode-line-cycle-use-icon-p=
+
+     If it is no-nil, =emms-mode-line-icon-image-cache= is used like =emms-mode-line-icon-function=.
+
+     If you use it, you need to load =emms-mode-line-icon=.
 
 **** User Option: =emms-mode-line-cycle-current-title-function=
 
@@ -37,25 +53,28 @@
      Default value is as follows like =emms-mode-line-playlist-current=.
 
      #+BEGIN_SRC emacs-lisp
-       (lambda () (emms-track-description (emms-playlist-current-selected-track)))     
+       (lambda () (emms-track-description (emms-playlist-current-selected-track)))
      #+END_SRC
 
 **** An example of setting
 
      #+BEGIN_SRC emacs-lisp
+       (require 'emms-mode-line-icon)
+
        (custom-set-variables
         '(emms-mode-line-cycle-max-width 15)
+        '(emms-mode-line-cycle-additional-space-num 4)
+        '(emms-mode-line-cycle-use-icon-p t)
         '(emms-mode-line-format " [%s]")
         '(emms-mode-line-cycle-current-title-function
           (lambda ()
             (let ((track (emms-playlist-current-selected-track)))
-              (case (emms-track-type track)
+              (cl-case (emms-track-type track)
                 ((streamlist)
                  (let ((stream-name (emms-stream-name
                                      (emms-track-get track 'metadata))))
                    (if stream-name stream-name (emms-track-description track))))
-                ((url)
-                 (emms-track-description track))
+                ((url) (emms-track-description track))
                 (t (file-name-nondirectory
                     (emms-track-description track))))))))
      #+END_SRC
