@@ -3,7 +3,7 @@
 ;; Copyright (C) 2015 momomo5717
 
 ;; Keywords: emms, mode-line
-;; Version: 0.1.0
+;; Version: 0.2.0
 ;; Package-Requires: ((emacs "24.4") (emms "4.0"))
 ;; URL: https://github.com/momomo5717/emms-mode-line-cycle
 
