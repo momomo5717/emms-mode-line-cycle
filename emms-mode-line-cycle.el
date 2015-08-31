@@ -197,8 +197,9 @@ If TITLE is no-nil, it is set to emms-mode-line-cycle's global variables."
     (when (eq emms-mode-line-mode-line-function
               'emms-mode-line-cycle-mode-line-function)
       (setq emms-mode-line-mode-line-function
-            (get 'emms-mode-line-cycle-mode-line-function
-                 :default-mode-line-function))
+            (or (get 'emms-mode-line-cycle-mode-line-function
+                     :default-mode-line-function)
+                emms-mode-line-mode-line-function))
       (put 'emms-mode-line-cycle-mode-line-function :default-mode-line-function
            nil))
     (advice-remove 'emms-playing-time-display
