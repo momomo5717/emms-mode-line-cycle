@@ -9,7 +9,7 @@
 
 ** Requirements
 
-   + GNU Emacs 24.4 or later
+   + GNU Emacs 24 or later
    + EMMS 4.0 or later
 
   Tested with GNU Emacs 24.5 (emacs-mac-app @5.9_0), EMMS 4.0
