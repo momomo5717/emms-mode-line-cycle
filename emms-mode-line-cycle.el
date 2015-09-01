@@ -108,11 +108,11 @@ WIDTH is string width."
          (char-ls
           (if (<= len emms-mode-line-cycle-max-width)
               (string-to-list title)
-            (let ((emms-mode-line-cycle-additional-space-num
-                   (if (< emms-mode-line-cycle-additional-space-num 1)
-                       1 emms-mode-line-cycle-additional-space-num)))
-             (cons ? (nconc (string-to-list title)
-                            (make-list (1- emms-mode-line-cycle-additional-space-num) ? ))))))
+            (cons ?  (nconc (string-to-list title)
+                            (make-list
+                             (if (< emms-mode-line-cycle-additional-space-num 1)
+                                 0 (1- emms-mode-line-cycle-additional-space-num))
+                             ? )))))
          (queue (cons nil nil)))
     (setcar queue (last (setcdr queue char-ls)))
     queue))
@@ -162,6 +162,7 @@ If INITIALP is no-nil, initialized."
           (emms-propertize "NP:" 'display emms-mode-line-icon-image-cache)
           (emms-mode-line-cycle--playlist-current title initialp)))
 
+;;;###autoload
 (defun emms-mode-line-cycle-mode-line-function (&optional title)
   "This is used as `emms-mode-line-mode-line-function'.
 If TITLE is no-nil, it is set to emms-mode-line-cycle's global variables."
@@ -169,8 +170,10 @@ If TITLE is no-nil, it is set to emms-mode-line-cycle's global variables."
       (emms-mode-line-cycle--icon-function title t)
     (emms-mode-line-cycle--playlist-current title t)))
 
-(defun emms-mode-line-cycle-update-mode-line-string ()
-  "Update `emms-mode-line-string', if `emms-mode-line-cycle' is non-nil."
+;;;###autoload
+(defun emms-mode-line-cycle-update-mode-line-string (&rest _)
+  "Update `emms-mode-line-string', if `emms-mode-line-cycle' is non-nil.
+This can be used as a before/after advice."
   (when (and emms-mode-line-cycle
              (> emms-mode-line-cycle--title-width emms-mode-line-cycle-max-width))
     (emms-mode-line-cycle--rotate-title-queue)
@@ -178,6 +181,11 @@ If TITLE is no-nil, it is set to emms-mode-line-cycle's global variables."
           (if emms-mode-line-cycle-use-icon-p
               (emms-mode-line-cycle--icon-function)
             (emms-mode-line-cycle--playlist-current)))))
+
+(unless (require 'nadvice nil t)
+  (defadvice emms-playing-time-display
+      (before emms-mode-line-cycle-advice-before activate)
+    (emms-mode-line-cycle-update-mode-line-string)))
 
 ;;;###autoload
 (define-minor-mode emms-mode-line-cycle
@@ -187,23 +195,23 @@ If TITLE is no-nil, it is set to emms-mode-line-cycle's global variables."
       (progn
         (unless (eq emms-mode-line-mode-line-function
                     'emms-mode-line-cycle-mode-line-function)
-          (put 'emms-mode-line-cycle-mode-line-function
-               :default-mode-line-function
+          (put 'emms-mode-line-cycle-mode-line-function :default-mode-line-function
                emms-mode-line-mode-line-function)
           (setq emms-mode-line-mode-line-function
                 'emms-mode-line-cycle-mode-line-function))
-        (advice-add 'emms-playing-time-display :before
-                    #'emms-mode-line-cycle-update-mode-line-string))
+        (when (fboundp 'advice-add)
+          (advice-add 'emms-playing-time-display :before
+                      #'emms-mode-line-cycle-update-mode-line-string)))
     (when (eq emms-mode-line-mode-line-function
               'emms-mode-line-cycle-mode-line-function)
       (setq emms-mode-line-mode-line-function
-            (or (get 'emms-mode-line-cycle-mode-line-function
-                     :default-mode-line-function)
+            (or (get 'emms-mode-line-cycle-mode-line-function :default-mode-line-function)
                 emms-mode-line-mode-line-function))
       (put 'emms-mode-line-cycle-mode-line-function :default-mode-line-function
            nil))
-    (advice-remove 'emms-playing-time-display
-                   #'emms-mode-line-cycle-update-mode-line-string)))
+    (when (fboundp 'advice-remove)
+      (advice-remove 'emms-playing-time-display
+                     #'emms-mode-line-cycle-update-mode-line-string))))
 
 (provide 'emms-mode-line-cycle)
 ;;; emms-mode-line-cycle.el ends here
