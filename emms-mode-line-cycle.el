@@ -119,11 +119,12 @@ WIDTH is string width."
 
 (defun emms-mode-line-cycle--rotate-queue (queue)
   "Rotate QUEUE."
-  (let ((head (cadr queue)))
-    (setcdr queue (cddr queue))
-    (when (null (cdr queue)) (setcar queue queue))
-    (setcar queue (setcdr (car queue) (cons head nil)))
-    queue))
+  (unless (null (cdr queue))
+    (let ((head (cadr queue)))
+      (setcdr queue (cddr queue))
+      (when (null (cdr queue)) (setcar queue queue))
+      (setcar queue (setcdr (car queue) (cons head nil)))))
+  queue)
 
 (defun emms-mode-line-cycle--set-title-queue (title)
   "Set TITLE to `emms-mode-line-cycle--title-queue'."
