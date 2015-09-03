@@ -1,4 +1,4 @@
-;;; emms-mode-line-cycle.el --- An extension of emms-mode-line.el for displaying `emms-mode-line-string' cyclically -*- lexical-binding: t -*-
+;;; emms-mode-line-cycle.el --- Display the emms mode line as a ticker -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2015 momomo5717
 
