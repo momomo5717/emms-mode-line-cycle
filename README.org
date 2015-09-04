@@ -1,6 +1,9 @@
+[[http://melpa.org/#/emms-mode-line-cycle][file:http://melpa.org/packages/emms-mode-line-cycle-badge.svg]]
+[[http://stable.melpa.org/#/emms-mode-line-cycle][file:http://stable.melpa.org/packages/emms-mode-line-cycle-badge.svg]]
+
 * emms-mode-line-cycle
 
-  This is a minor mode for updating =emms-mode-line-string= cyclically within specified width
+  This package is a minor mode for updating =emms-mode-line-string= cyclically within specified width
   with =emms-playing-time-display=.
 
   It is useful for long track titles.
@@ -10,7 +13,7 @@
 ** Requirements
 
    + GNU Emacs 24 or later
-   + EMMS 4.0 or later
+   + [[https://www.gnu.org/software/emms/][EMMS]] 4.0 or later
 
   Tested with GNU Emacs 24.5 (emacs-mac-app @5.9_0), EMMS 4.0
 
