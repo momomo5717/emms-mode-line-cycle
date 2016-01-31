@@ -49,9 +49,11 @@
 ;; User Option:
 ;;
 ;;  + `emms-mode-line-cycle-max-width'
+;;  + `emms-mode-line-cycle-any-width-p'
 ;;  + `emms-mode-line-cycle-additional-space-num'
 ;;  + `emms-mode-line-cycle-use-icon-p'
 ;;  + `emms-mode-line-cycle-current-title-function'
+;;  + `emms-mode-line-cycle-velocity'
 ;;
 
 ;;; Code:
@@ -71,9 +73,13 @@
   "The number of space characters to add them to the current title."
   :type 'integer)
 
+(defcustom emms-mode-line-cycle-any-width-p nil
+  "Rotate title which is less than `emms-mode-line-cycle-max-width'."
+  :type 'boolean)
+
 (defcustom emms-mode-line-cycle-use-icon-p nil
   "Use icon like `emms-mode-line-icon-function'.
-If you use it, you need to load `emms-mode-line-icon'."
+This feature depends on emms-mode-line-icon."
   :type 'boolean)
 
 (defcustom emms-mode-line-cycle-current-title-function
@@ -82,6 +88,10 @@ If you use it, you need to load `emms-mode-line-icon'."
   "Getter function for the current track title.
 Its function returns a stirng."
   :type 'function)
+
+(defcustom emms-mode-line-cycle-velocity 1
+  "Number of characters per `emms-mode-line-cycle-update-mode-line-string'."
+  :type 'integer)
 
 (defvar emms-mode-line-cycle) ; Suppress a warning message
 (defvar emms-mode-line-icon-before-format)
@@ -93,8 +103,13 @@ Its function returns a stirng."
 (defvar emms-mode-line-cycle--title-width 0
   "Width of the current track title via `string-width'.")
 
-(defvar emms-mode-line-cycle--get-title-cache (lambda () "")
+(defvar emms-mode-line-cycle--get-title-cache-function (lambda (&optional _n) "")
   "Getter function for the current title cache.")
+
+(defun emms-mode-line-cycle--rotate-title-p ()
+  "Return t if title can be rotated."
+  (or emms-mode-line-cycle-any-width-p
+      (> emms-mode-line-cycle--title-width emms-mode-line-cycle-max-width)))
 
 (defun emms-mode-line-cycle--substring (str &optional width)
   "Substring STR with `emms-mode-line-cycle-max-width'.
@@ -104,16 +119,10 @@ WIDTH is string width."
 
 (defun emms-mode-line-cycle--make-title-queue (title)
   "Return a queue of TITLE."
-  (let* ((len (string-width title))
-         (char-ls
-          (if (<= len emms-mode-line-cycle-max-width)
-              (string-to-list title)
-            (cons ?  (nconc (string-to-list title)
-                            (make-list
-                             (if (< emms-mode-line-cycle-additional-space-num 1)
-                                 0 (1- emms-mode-line-cycle-additional-space-num))
-                             ? )))))
-         (queue (cons nil nil)))
+  (let ((char-ls (nconc (string-to-list title)
+                        (make-list emms-mode-line-cycle-additional-space-num
+                                   ? )))
+        (queue (cons nil nil)))
     (setcar queue (last (setcdr queue char-ls)))
     queue))
 
@@ -140,20 +149,41 @@ WIDTH is string width."
   "Make getter function for title cache of QUEUE.
 WIDTH is string width."
   (let* ((len (length (cdr queue)))
-         (len-1 (1- len))
          (count 0)
          (title-cache (emms-mode-line-cycle--make-title-cache queue width)))
-    (if (zerop len) (lambda () "")
-      (lambda () (aref title-cache
-                   (setq count (if (= count len-1) 0 (1+ count))))))))
+    (if (zerop len) (lambda (&optional _n) "")
+      (lambda (&optional n)
+        (aref title-cache (setq count (mod (+ count (or n 1)) len)))))))
+
+(defun emms-mode-line-cycle--get-title-cache (&optional n)
+  "Return title cache rotated N times.
+If N is nil, title cache is not rotated."
+  (if (functionp emms-mode-line-cycle--get-title-cache-function)
+      (funcall emms-mode-line-cycle--get-title-cache-function (or n 0))
+    ""))
+
+;;;###autoload
+(defun emms-mode-line-cycle-get-title (&optional n)
+  "Retrun title or title cache rotated N times.
+If N is nil, title cache is not rotated."
+  (if (emms-mode-line-cycle--rotate-title-p)
+      (emms-mode-line-cycle--get-title-cache n)
+    emms-mode-line-cycle--title))
 
 (defun emms-mode-line-cycle--initialize (title)
   "Initialize emms-mode-line-cycle's global variables to the TITLE."
   (setq emms-mode-line-cycle--title title
         emms-mode-line-cycle--title-width (string-width title)
-        emms-mode-line-cycle--get-title-cache
+        emms-mode-line-cycle--get-title-cache-function
         (emms-mode-line-cycle--make-title-cache-getter
-         (emms-mode-line-cycle--make-title-queue title))))
+         (emms-mode-line-cycle--make-title-queue title)
+         (min emms-mode-line-cycle-max-width emms-mode-line-cycle--title-width))))
+
+(defun emms-mode-line-cycle-clear ()
+  "Clear `emms-mode-line-cycle--title'."
+  (setq emms-mode-line-cycle--title ""
+        emms-mode-line-cycle--title-width 0
+        emms-mode-line-cycle--get-title-cache-function (lambda (&optional _n) "")))
 
 (defun emms-mode-line-cycle--playlist-current (&optional title initialp)
   "Format the current track TITLE like `emms-mode-line-playlist-current'.
@@ -162,11 +192,7 @@ If INITIALP is no-nil, initialized."
     (emms-mode-line-cycle--initialize
      (or title (funcall emms-mode-line-cycle-current-title-function))))
   (format emms-mode-line-format
-          (if (> emms-mode-line-cycle--title-width emms-mode-line-cycle-max-width)
-              (if initialp
-                  (emms-mode-line-cycle--substring emms-mode-line-cycle--title)
-                (funcall emms-mode-line-cycle--get-title-cache))
-            emms-mode-line-cycle--title)))
+          (emms-mode-line-cycle-get-title (unless initialp emms-mode-line-cycle-velocity))))
 
 (defun emms-mode-line-cycle--icon-function (&optional title initialp)
   "Format the current track TITLE like `emms-mode-line-icon-function'.
@@ -189,7 +215,7 @@ If TITLE is no-nil, it is set to emms-mode-line-cycle's global variables."
   "Update `emms-mode-line-string', if `emms-mode-line-cycle' is non-nil.
 This can be used as a before/after advice."
   (when (and emms-mode-line-cycle
-             (> emms-mode-line-cycle--title-width emms-mode-line-cycle-max-width))
+             (emms-mode-line-cycle--rotate-title-p))
     (setq emms-mode-line-string
           (if emms-mode-line-cycle-use-icon-p
               (emms-mode-line-cycle--icon-function)
@@ -214,7 +240,9 @@ This can be used as a before/after advice."
                 'emms-mode-line-cycle-mode-line-function))
         (when (fboundp 'advice-add)
           (advice-add 'emms-playing-time-display :before
-                      #'emms-mode-line-cycle-update-mode-line-string)))
+                      #'emms-mode-line-cycle-update-mode-line-string))
+        (add-hook 'emms-player-finished-hook 'emms-mode-line-cycle-clear)
+        (add-hook 'emms-player-stopped-hook 'emms-mode-line-cycle-clear))
     (when (eq emms-mode-line-mode-line-function
               'emms-mode-line-cycle-mode-line-function)
       (setq emms-mode-line-mode-line-function
@@ -224,7 +252,9 @@ This can be used as a before/after advice."
            nil))
     (when (fboundp 'advice-remove)
       (advice-remove 'emms-playing-time-display
-                     #'emms-mode-line-cycle-update-mode-line-string))))
+                     #'emms-mode-line-cycle-update-mode-line-string))
+    (remove-hook 'emms-player-finished-hook 'emms-mode-line-cycle-clear)
+    (remove-hook 'emms-player-stopped-hook 'emms-mode-line-cycle-clear)))
 
 (provide 'emms-mode-line-cycle)
 ;;; emms-mode-line-cycle.el ends here
