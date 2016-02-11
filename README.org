@@ -26,7 +26,7 @@
      (emms-mode-line 1)
      (emms-playing-time 1)
 
-     ;; If you use this package like `emms-mode-line-icon', you need to load it.
+     ;; `emms-mode-line-cycle' can be used with emms-mode-line-icon.
      (require 'emms-mode-line-icon)
      (custom-set-variables '(emms-mode-line-cycle-use-icon-p t))
 
@@ -39,6 +39,10 @@
 
      Default value is =16=. The width of =emms-mode-line-format= isn't included.
 
+**** User Option: =emms-mode-line-cycle-any-width-p=
+
+     Default value is =nil=. If it is non-nil, the title is rotated which is less than =emms-mode-line-cycle-max-width=.
+
 **** User Option: =emms-mode-line-cycle-additional-space-num=
 
      Default value is =2=. It is the number of space characters to add them to the current title.
@@ -47,7 +51,7 @@
 
      If it is no-nil, =emms-mode-line-icon-image-cache= is used like =emms-mode-line-icon-function=.
 
-     If you use it, you need to load =emms-mode-line-icon=.
+     This feature requires =(require 'emms-mode-line-icon)= before =(emms-mode-line-cycle 1)=
 
 **** User Option: =emms-mode-line-cycle-current-title-function=
 
@@ -59,16 +63,32 @@
        (lambda () (emms-track-description (emms-playlist-current-selected-track)))
      #+END_SRC
 
-**** An example of setting
+**** User Option: =emms-mode-line-cycle-velocity=
+
+     Number of characters per =emms-mode-line-cycle-update-mode-line-string=.
+
+     Default value is =1=.
+
+**** Function: emms-mode-line-cycle-get-title /&optional n/
+
+     This function returns a displayed title which is updated =n= times.
+
+     If =n= is nil, =n= is set to =0=.
+
+**** A config example
 
      #+BEGIN_SRC emacs-lisp
        (require 'emms-mode-line-icon)
+
+       (emms-mode-line-cycle 1)
 
        (custom-set-variables
         '(emms-mode-line-cycle-max-width 15)
         '(emms-mode-line-cycle-additional-space-num 4)
         '(emms-mode-line-cycle-use-icon-p t)
         '(emms-mode-line-format " [%s]")
+        '(emms-mode-line-cycle-any-width-p t)
+        '(emms-mode-line-cycle-velocity 2)
         '(emms-mode-line-cycle-current-title-function
           (lambda ()
             (let ((track (emms-playlist-current-selected-track)))
@@ -79,5 +99,12 @@
                    (if stream-name stream-name (emms-track-description track))))
                 ((url) (emms-track-description track))
                 (t (file-name-nondirectory
-                    (emms-track-description track))))))))
+                    (emms-track-description track)))))))
+        '(emms-mode-line-titlebar-function
+          (lambda ()
+            '(:eval
+              (when emms-player-playing-p
+                (format " %s %s"
+                        (format emms-mode-line-format (emms-mode-line-cycle-get-title))
+                        emms-playing-time-string))))))
      #+END_SRC
