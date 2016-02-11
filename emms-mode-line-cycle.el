@@ -1,10 +1,11 @@
 ;;; emms-mode-line-cycle.el --- Display the emms mode line as a ticker -*- lexical-binding: t -*-
 
-;; Copyright (C) 2015 momomo5717
+;; Copyright (C) 2015-2016 momomo5717
 
 ;; Keywords: emms, mode-line
-;; Version: 0.2.4
+;; Version: 0.2.5
 ;; Package-Requires: ((emacs "24") (emms "4.0"))
+;; Author: momomo5717
 ;; URL: https://github.com/momomo5717/emms-mode-line-cycle
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -40,7 +41,7 @@
 ;; (emms-mode-line 1)
 ;; (emms-playing-time 1)
 ;;
-;; If you use this package like `emms-mode-line-icon', you need to load it.
+;; ;; `emms-mode-line-cycle' can be used with emms-mode-line-icon.
 ;; (require 'emms-mode-line-icon)
 ;; (custom-set-variables '(emms-mode-line-cycle-use-icon-p t))
 ;;
