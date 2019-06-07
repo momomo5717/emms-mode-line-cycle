@@ -59,6 +59,7 @@
 
 ;;; Code:
 (require 'emms-mode-line)
+(require 'emms-mode-line-icon)
 (require 'emms-playing-time)
 
 (defgroup emms-mode-line-cycle nil
@@ -95,8 +96,6 @@ Its function returns a stirng."
   :type 'integer)
 
 (defvar emms-mode-line-cycle) ; Suppress a warning message
-(defvar emms-mode-line-icon-before-format)
-(defvar emms-mode-line-icon-image-cache)
 
 (defvar emms-mode-line-cycle--title ""
   "The current track title.")
@@ -195,12 +194,18 @@ If INITIALP is no-nil, initialized."
   (format emms-mode-line-format
           (emms-mode-line-cycle-get-title (unless initialp emms-mode-line-cycle-velocity))))
 
+(defmacro emms-mode-line-icon-get ()
+  (if (fboundp 'emms-mode-line-icon-generate)
+      '(emms-mode-line-icon-generate
+        emms-mode-line-icon-color)
+    'emms-mode-line-icon-image-cache))
+
 (defun emms-mode-line-cycle--icon-function (&optional title initialp)
   "Format the current track TITLE like `emms-mode-line-icon-function'.
 If INITIALP is no-nil, initialized."
   (concat " "
           emms-mode-line-icon-before-format
-          (emms-propertize "NP:" 'display emms-mode-line-icon-image-cache)
+          (emms-propertize "NP:" 'display (emms-mode-line-icon-get))
           (emms-mode-line-cycle--playlist-current title initialp)))
 
 ;;;###autoload
